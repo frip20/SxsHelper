@@ -17,7 +17,9 @@
 #define IDM_FRESH                  4004
 #define IDM_FINDNEXT               4005
 #define IDM_FINDPREV               4006
-#define IDC_STATIC                 -1
+#ifndef IDC_STATIC
+#define IDC_STATIC                  -1
+#endif
 
 // ∞Ê±æ∫≈œ‡πÿ
 #define _VERTOSTRING(arg) #arg  
@@ -25,7 +27,7 @@
 #define VER_MAIN    0  
 #define VER_SUB     1  
 #define VER_SUB2    4 
-#define VER_BUILD   5  
+#define VER_BUILD   6  
 #define VER_FULL    VERTOSTRING(VER_MAIN.VER_SUB.VER_SUB2)
 #define VER_FULL_RC VER_MAIN,VER_SUB,VER_SUB2,VER_BUILD
 

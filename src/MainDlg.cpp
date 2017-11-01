@@ -34,6 +34,7 @@ LRESULT CMainDlg::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, 
     szFilterHint.LoadString(IDS_FILTERHINT);
     mFilter.Create(mTree, NULL);
     mFilter.SendMessage(EM_SETCUEBANNER, TRUE, (LPARAM)(LPCTSTR)szFilterHint);
+    mFilter.SendMessage(EM_LIMITTEXT, MAX_PATH);
 
     // 设置窗体图标
     HICON hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAIN));
@@ -53,16 +54,11 @@ LRESULT CMainDlg::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, 
     // 注册查找对话框事件
     CFindDlg::WM_FINDMESSAGE = ::RegisterWindowMessage(FINDMSGSTRING);
 
-    // 从注册表读取默认保存路径
-    HKEY hKey = NULL;
-    if (ERROR_SUCCESS == ::RegOpenKeyEx(HKEY_CURRENT_USER, 
-        TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders"), 0, KEY_READ, &hKey))
+    // 从获取默认保存路径
+    if (::SHGetSpecialFolderPath(m_hWnd, m_szExport, CSIDL_MYDOCUMENTS, TRUE))
     {
-        DWORD dwSize = sizeof(m_szExport);
-        ::RegQueryValueEx(hKey, TEXT("Personal"), NULL, NULL, (PBYTE)m_szExport, &dwSize);
-        ::RegCloseKey(hKey);
+        ::PathCombine(m_szExport, m_szExport, TEXT("Remove.txt"));
     }
-    ::PathCombine(m_szExport, m_szExport, TEXT("Remove.txt"));
 
     // 创建扫描线程
     m_hThread = ::CreateThread(NULL, 0, CMainDlg::ThreadScan, this, 0, NULL);
@@ -71,6 +67,9 @@ LRESULT CMainDlg::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, 
 
 LRESULT CMainDlg::OnDestroy(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+    // 释放菜单资源
+    if (NULL != m_hMenu) ::DestroyMenu(m_hMenu);
+
     ::PostQuitMessage(LOWORD(wParam));
     return TRUE;
 }
@@ -305,16 +304,22 @@ LRESULT CMainDlg::OnFilterChar(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, 
         mFilter.GetWindowText(szFind);
         for (int i = 0; i < mMap.GetSize(); i++)
         {
-            HTREEITEM hItem = mMap.GetValueAt(i)->Parent.GetValueAt(0);
-            if (::StrStrI(mMap.GetKeyAt(i), szFind) != NULL)
+            CAssemblyNode *pNode = mMap.GetValueAt(i);
+            if (::StrStrI(pNode->name, szFind) != NULL)
             {
-                TreeView_SetItemState(mTree, hItem, TVIS_BOLD, TVIS_BOLD);
-                TreeView_EnsureVisible(mTree, hItem);
+                for (int j = 0; j < pNode->Parent.GetSize(); j++)
+                {
+                    TreeView_SetItemState(mTree, pNode->Parent.GetValueAt(j), TVIS_BOLD, TVIS_BOLD);
+                    TreeView_EnsureVisible(mTree, pNode->Parent.GetValueAt(j));
+                }
             }
             else
             {
-                TreeView_SetItemState(mTree, hItem, 0, TVIS_BOLD);
-                TreeView_Expand(mTree, hItem, TVE_COLLAPSE);
+                for (int j = 0; j < pNode->Parent.GetSize(); j++)
+                {
+                    TreeView_SetItemState(mTree, pNode->Parent.GetValueAt(j), 0, TVIS_BOLD);
+                    TreeView_Expand(mTree, pNode->Parent.GetValueAt(j), TVE_COLLAPSE);
+                }
             }
         }
         return TRUE;

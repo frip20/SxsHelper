@@ -132,7 +132,7 @@ DWORD CALLBACK CMainDlg::ThreadScan(LPVOID lpParam)
     WIN32_FIND_DATA wfd = { 0 };
     CAssemblyMap dict;
     
-    HRESULT hr = ::CoInitialize(NULL);
+    HRESULT hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     HR_CHECK(hr);
 
     // 初始化 XML 对象

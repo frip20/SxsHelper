@@ -60,7 +60,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 #ifndef _DEBUG
     if (!SelectFolder(szPath)) return FALSE;
 #endif
-    HRESULT hr = ::CoInitialize(NULL);
+    HRESULT hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     ATLASSERT(SUCCEEDED(hr));
 
     ::DefWindowProc(NULL, 0, 0, 0L);
@@ -69,23 +69,23 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     ATLASSERT(SUCCEEDED(hr));
 
     ::PathCombine(szPath, szPath, PathRel_Packages);
-    CMainDlg dlgMain(szPath);
-    RECT rcWnd = {0, 0, 600, 500};
-
-    HWND hWnd = dlgMain.Create(HWND_DESKTOP, rcWnd);
-
-    dlgMain.ShowWindow(nCmdShow);
-
-    HACCEL hAccMain = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_MAIN));
-
-    // 主消息循环:
     MSG msg;
-    while (::GetMessage(&msg, NULL, 0, 0))
     {
-        if (!dlgMain.FindMsg(&msg) && !TranslateAccelerator(hWnd, hAccMain, &msg))
+        CMainDlg dlgMain(szPath);
+        RECT rcWnd = { 0, 0, 600, 500 };
+        HWND hWnd = dlgMain.Create(HWND_DESKTOP, rcWnd);
+
+        dlgMain.ShowWindow(nCmdShow);
+        HACCEL hAccMain = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_MAIN));
+
+        // 主消息循环:
+        while (::GetMessage(&msg, NULL, 0, 0))
         {
-            ::TranslateMessage(&msg);
-            ::DispatchMessage(&msg);
+            if (!dlgMain.FindMsg(&msg) && !TranslateAccelerator(hWnd, hAccMain, &msg))
+            {
+                ::TranslateMessage(&msg);
+                ::DispatchMessage(&msg);
+            }
         }
     }
 
